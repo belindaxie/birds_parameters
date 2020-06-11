@@ -1,3 +1,9 @@
+
+# ------------------------------------------------------------------------- #
+# --------- Adding types, but not tokens, affects property induction ------ #
+# ----------------- Modeling Experiment 1 conditions ---------------------- #
+# -------------------------------------------------------------------------- #
+
 require(cowplot)
 require(tidyverse)
 require(ggpubr)
@@ -8,93 +14,74 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 source("./BayesGen-BX.R")
 
-# this deals with the conditions from Experiment 1
-# it models 1 -> 11 -> 111 -> 1111 & 1 -> 2 -> 3 -> 4
-# and now also deals with 21, 211, 31, 22 conditions
+# ------------ PARAMETERS ----------------------------- #
+phi <- 1                 # phi = 1: uniform prior over hypotheses, phi > 1: greater prior belief in larger hypotheses
+nits <- 1000             # number of iterations
 
-# -------------------------- fixed and free parameters ------------------------------------- #
-# fixed (for now)
-phi <- 1              # phi = 1 -> uniform prior over all hypotheses, phi > 1 -> greater prior belief in larger hypotheses
-thetaType <- .2          # theta = 1 -> strong sampling
-thetaRep3 <- .05
-thetaRep2 <- thetaRep3# - .05
-thetaRep <- thetaRep3# - .1
+# ------ initial values for parameters ---------------- #
+# THETA to represent sampling assumptions/informational value
+thetaType <- .2   # theta = 1: strong sampling, theta = 0: weak sampling
+thetaToken <- .05
 
-nits <- 1000          # number of iterations
+# TRAINING items
+target1 <- .45    # first type
+target2 <- .46    # second type
+target3 <- .44    # third type
+target4 <- .47    # 4th type
 
-test <- c(.51, .707, .9)  # this is overridden in l. 47
-nt <- length(test)                                    # number of test items
+typesd <- .06     # when randomly generating stimulus values for types, how much standard deviation to use? 
+tokensd <- .009   # when randomly generating stimulus values for tokens, how much standard deviation to use? tokensd < typesd
 
-bg1 <- matrix(data = c(rep(0, nits*nt)),   # create enough 0s for each iteration x each test item - to be filled with predicted generalisation probability
+# TEST items
+test <- c(.51, .707, .9) # similarity values for high-, med-, low-sim test/generalization items
+nt <- length(test)       # number of test items
+
+# inconsequential details
+bg1 <- matrix(data = c(rep(0, nits*nt)),   # create enough 0s for each iteration to fill with predicted generalisation probability
               nrow = nt)                   # 1 row for each test item (high, medium, low sim)
-bg11 <- bg111 <- bg1111 <- bg2 <- bg3 <- bg4 <- bg1    # make all others in the same way - need one matrix per condition
+bg11 <- bg111 <- bg1111 <- bg2 <- bg3 <- bg4 <- bg1    # need one matrix per condition
 bg2v1 <- bg2v2 <- bg3v2 <- bg4v2 <- bg1
 bg31 <- bg21 <- bg211 <- bg2
 
-target1 <- .45    
-target2 <- .46
-target3 <- .44
-target4 <- .47
-typesd <- .06      # when randomly generating stimulus values for types, how much standard deviation to use? 
-
-probIgnore <- 0  # probability that an individual ignores repetitions - ignore/not sort of represents sampling with/without replacement?
-tokensd <- .009    # when randomly generating stimulus values for tokens, how much standard deviation to use? tokensd < typesd
-
-ignores <- rbinom(nits, size = 1, prob = probIgnore)           # if 1 -> on that iteration, ignore repetition
-ignores <- matrix(rep(ignores, nt), nrow = nt, byrow = TRUE)   # just copy the ignores across 3 rows to conform to following ifelse condition
 # --------------------------- generate predictions ------------------------------ #
 for( i in 1:nits ) {     # average out predictions over nits iterations
   
-  train1 <- rnorm(1, mean = target1, sd = typesd) #runif(1)*.2 + .4 # generates number randomly from a uniform distribution, then /.2 makes it smallish, then +.4 to approach .5
-  train2 <- rnorm(1, mean = target2, sd = typesd) #runif(1)*.2 + .4 # 2nd training exemplar
-  train3 <- rnorm(1, mean = target3, sd = typesd) #runif(1)*.2 + .4 # 3rd training exemplar
-  train4 <- rnorm(1, mean = target4, sd = typesd) #runif(1)*.2 + .4 # 4th training exemplar
+  train1 <- rnorm(1, mean = target1, sd = typesd) # generates value for 1st type from a normal distribution
+  train2 <- rnorm(1, mean = target2, sd = typesd)
+  train3 <- rnorm(1, mean = target3, sd = typesd)
+  train4 <- rnorm(1, mean = target4, sd = typesd)
   
   # generalisation from adding types
   # testH <- (max(c(train1, train2, train3, train4)) + .01)
   # test <- c(testH, testH + ((.9 - testH) / 2), .9)
   
   # for each iteration, fill the next column with gen probabilities for high, medium, low sim categories (in that order)
-  bg1[,i] <- BayesGen(train1, test, thetaType, phi)                # generalisation based on 1 training exemplar
-  bg11[,i] <- BayesGen(c(train1, train2), test, thetaType, phi)    # generalisation based on 2 training exemplars
-  bg111[,i] <- BayesGen(c(train1, train2, train3), test, thetaType, phi)          # based on 3 training exemplars
-  bg1111[,i] <- BayesGen(c(train1, train2, train3, train4), test, thetaType, phi)          # 4 training exemplars
+  bg1[,i] <- BayesGen(train1, test, thetaType, phi)                # generalisation based on 1 type
+  bg11[,i] <- BayesGen(c(train1, train2), test, thetaType, phi)    # generalisation based on 2 types
+  bg111[,i] <- BayesGen(c(train1, train2, train3), test, thetaType, phi)          # based on 3 types
+  bg1111[,i] <- BayesGen(c(train1, train2, train3, train4), test, thetaType, phi)          # 4 types
   
   # generalisation from adding tokens 
-  train1a <- rnorm(1, mean = train1, sd = tokensd)  # the repetition is constrained to be within a range around the first training item
+  train1a <- rnorm(1, mean = train1, sd = tokensd)  # the token is constrained to be within a range around the first type
   train1b <- rnorm(1, mean = train1, sd = tokensd)  # the above is true for all tokens
   train1c <- rnorm(1, mean = train1, sd = tokensd)
   
-  # is the second token ignored or treated as a discrete exemplar?
-  # bg2[,i] <- if_else(ignores[,i] == 1,     # if the set probIgnore dictates ignoring a repetition in this iteration,
-  #                    BayesGen(train1, test, thetaRep, phi),              # then ignore repetition and behave as if only 1 training exemplar
-  #                    # BayesGen(c(train1, train1), test, theta, phi),              # then ignore repetition and behave as if only 1 training exemplar
-  #                    BayesGen(c(train1, train1a), test, thetaRep, phi))  # otherwise, treat as 2 (only slightly) discrete exemplars
-  # 
   bg2[,i] <- (BayesGen(train1, test, thetaType, phi))*1/2 +
                 (BayesGen(train1a, test, thetaRep, phi))*1/2
-  
-  # bg3[,i] <- if_else(ignores[,i] == 1,
-  #                    BayesGen(train1, test, thetaRep, phi),              # then ignore repetitions and behave as if only 1 training exemplar
-  #                    BayesGen(c(train1, train1a, train1b), test, thetaRep, phi))  # otherwise, treat as 3 discrete exemplars
   
   bg3[,i] <- (BayesGen(train1, test, thetaType, phi))*1/3 +
                 (BayesGen(c(train1a, train1b), test, thetaRep, phi))*2/3
   
-  # bg4[,i] <- if_else(ignores[,i] == 1,
-  #                    BayesGen(train1, test, thetaRep, phi),              # then ignore repetitions and behave as if only 1 training exemplar
-  #                    BayesGen(c(train1, train1a, train1b, train1c), test, thetaRep, phi)) # otherwise, treat as 4 discrete exemplars
-  
   bg4[,i] <- (BayesGen(train1, test, thetaType, phi))*1/4 +
     (BayesGen(c(train1a, train1b, train1c), test, thetaRep, phi))*3/4
   
-  # adding novel instances with 1 repetition
+  # adding types with 2 tokens
   bg21[,i] <- (BayesGen(c(train1, train2), test, thetaType, phi))*2/3 +
                  (BayesGen(train1a, test, thetaRep2, phi))*1/3
   bg211[,i] <- (BayesGen(c(train1, train2, train3), test, thetaType, phi))*3/4 +
                  (BayesGen(train1a, test, thetaRep3, phi))*1/4
   
-  # adding novel instances with 2 repetitions
+  # adding types with 3 tokens
   bg31[,i] <- (BayesGen(c(train1, train2), test, thetaType, phi))*2/4 +
                 (BayesGen(c(train1a, train1b), test, thetaRep2, phi))*2/4
 }
@@ -187,7 +174,7 @@ ggTokens
 
 # plot_grid(ggTypes, ggTokens, labels = "AUTO", ncol = 1)  # plot types and tokens graphs next to each other
 
-# adding novel instances with 1 repetition
+# adding types with 2 tokens
 bg21 <- rowMeans(bg21)
 bg211 <- rowMeans(bg211)
 
@@ -210,7 +197,7 @@ ggTypes1 <- ggplot(valsTy1, aes(x = test, y = genProb)) +     # plot predicted g
   theme(legend.position = c(.8, .7))
 # ggTypes1
 
-# adding novel instances with 2 repetitions
+# adding types with 3 tokens
 bg31 <- rowMeans(bg31)
 valsTy2 <- as.data.frame(cbind(test, bg3, bg31))
 valsTy2 <- gather(valsTy2, key = "genCond", value = "genProb", bg3:bg31)
