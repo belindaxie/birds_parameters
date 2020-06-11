@@ -36,26 +36,20 @@ tokensd <- .009   # when randomly generating stimulus values for tokens, how muc
 test <- c(.51, .707, .9) # similarity values for high-, med-, low-sim test/generalization items
 nt <- length(test)       # number of test items
 
-# inconsequential details
-bg1 <- matrix(data = c(rep(0, nits*nt)),   # create enough 0s for each iteration to fill with predicted generalisation probability
-              nrow = nt)                   # 1 row for each test item (high, medium, low sim)
-bg11 <- bg111 <- bg1111 <- bg2 <- bg3 <- bg4 <- bg1    # need one matrix per condition
-bg2v1 <- bg2v2 <- bg3v2 <- bg4v2 <- bg1
-bg31 <- bg21 <- bg211 <- bg2
-
 # --------------------------- generate predictions ------------------------------ #
-parits <- 10
+parits <- 10  # how many times do I want to test out different parameter values?
 
-testPattern1 <- matrix(data = c(rep(0, parits*3)), nrow = parits)
-testPattern2 <- matrix(data = c(rep(0, parits*3)), nrow = parits)
+# testPattern1 <- matrix(data = c(rep(0, parits*3)), nrow = parits)
+# testPattern2 <- matrix(data = c(rep(0, parits*3)), nrow = parits)
 
 typesIncreaseH <- matrix(data = c(rep(0, parits)), nrow = parits)
 typesDecreaseM <- matrix(data = c(rep(0, parits)), nrow = parits)
 typesDecreaseL <- matrix(data = c(rep(0, parits)), nrow = parits)
 
-# use a loop
+# use a loop to test different parameter values
 for (a in 1:parits) {
   
+  # sample different parameter values
   thetaType <- runif(1, min = .2, max = .4)
   thetaToken <- runif(1, min = thetaType - .2, max = thetaType - .1)
   
@@ -143,14 +137,14 @@ for (a in 1:parits) {
     # 
     # testPattern1[a,] <- pattern1
     # testPattern2[a,] <- pattern2
-    typesIncreaseH[a,] <- bg1[1] < bg1111[1]
-    typesDecreaseM[a,] <- bg1[2] > bg1111[2]
-    typesDecreaseL[a,] <- bg1[3] > bg1111[3]
+    typesIncreaseH[a,] <- bg1[1] < bg1111[1]  # adding types (from 1 -> 1111) increases gen at high-sim category?
+    typesDecreaseM[a,] <- bg1[2] > bg1111[2]  # adding types decreases gen at medium-sim category?
+    typesDecreaseL[a,] <- bg1[3] > bg1111[3]  # adding types decreases gen at low-sim categories?
 }
 
-typesIncreaseH
-typesDecreaseM
-typesDecreaseL
+sum(typesIncreaseH)/parits  # how often the pattern occurred (e.g., 1 high-sim gen rating < 1111 high-sim gen rating)
+sum(typesDecreaseM)/parits
+sum(typesDecreaseL)/parits
 
 # 
 # 
