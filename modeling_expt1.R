@@ -27,17 +27,16 @@ parits <- 10  # how many times do I want to test out different parameter values?
 
 typesCols <- c("1token", "2tokens", "3tokens")
 typesHigh <- matrix(data = c(rep(0, parits*3)), nrow = parits)
-colnames(typesHigh) <- typesCols
+colnames(typesHigh) <- typesCols  # does adding types increase gen at high categories?
 
-typesMed <- typesHigh
-typesLow <- typesHigh
+typesMed <- typesHigh             # does adding types decrease gen at med categories?
+typesLow <- typesHigh             
 
 tokensCols <- c("1type", "2types", "3types")
 tokensHigh <- typesHigh
 colnames(tokensHigh) <- tokensCols
 
-tokensMed <- tokensHigh
-tokensLow <- tokensHigh
+tokensLow <- tokensMed <- tokensHigh
 
 pars <- c("thetaType", "thetaToken", "target1", "target2", "target3", "target4", "typesd", "tokensd")
 parValues <- matrix(data = c(rep(0, parits*length(pars))), nrow = parits)
@@ -49,7 +48,7 @@ for (a in 1:parits) {
   # sample different parameter values
   # theta values to represent sampling assumptions/informational value
   thetaType <- runif(1, min = .2, max = .4)                           # value used to discuss modeling results = .3
-  thetaToken <- runif(1, min = thetaType - .2, max = thetaType - .1)  # value in paper = .05
+  thetaToken <- runif(1, min = thetaType - .2, max = thetaType - .1)  # value in paper = .15
   
   # stimulus values for types
   targetsM <- runif(1, .2, .6) # select the centre of a uniform distribution, from which to sample types

@@ -13,85 +13,143 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 source("./BayesGen-BX.R")
 
-# -------------------------- fixed and free parameters ------------------------------------- #
-# fixed (for now)
-phi <- 1            # phi = 1 -> uniform prior over all hypotheses, phi > 1 -> greater prior belief in larger hypotheses
-thetaType <- .3         # theta = 1 -> strong sampling
-thetaRep3 <- .15
-thetaRep <- thetaRep3 - .1
-thetaRep2 <- thetaRep3 - .05
+# ------------ PARAMETERS ----------------------------- #
+phi <- 1                 # phi = 1: uniform prior over hypotheses, phi > 1: greater prior belief in larger hypotheses
+nits <- 1000             # number of iterations
 
-nits <- 1000          # number of iterations
+# --------------------------- generate predictions ------------------------------ #
+parits <- 10  # how many times do I want to test out different parameter values?
+
+typesCols <- c("2tokens", "4tokens")
+typesMed <- matrix(data = c(rep(0, parits*2)), nrow = parits)
+colnames(typesMed) <- typesCols
+
+typesLow <- typesMed
+
+tokensCols <- c("1type", "2types", "3types")
+tokensHigh <- matrix(data = c(rep(0, parits*3)), nrow = parits)
+colnames(tokensHigh) <- tokensCols
+
+tokensLow <- tokensMed <- tokensHigh
+
+pars <- c("thetaType", "thetaToken", "target1", "target2", "target3", "typesd", "tokensd")
+parValues <- matrix(data = c(rep(0, parits*length(pars))), nrow = parits)
+colnames(parValues) <- pars
+# thetaRep3 <- .15
+# thetaRep <- thetaRep3 - .1
+# thetaRep2 <- thetaRep3 - .05
 
 test <- c(.51, .707, .9)  # this is overridden in l. 47
 nt <- length(test)                                    # number of test items
 
-bg2 <- matrix(data = c(rep(0, nits*nt)),   # create enough 0s for each iteration x each test item - to be filled with predicted generalisation probability
-              nrow = nt)                   # 1 row for each test item (high, medium, low sim)
-bg4 <- bg44 <- bg444 <- bg222 <- bg22 <- bg2   # make all others in the same way - need one matrix per condition
-
-target1 <- .45    
-target2 <- .46
-target3 <- .44
-typesd <- .06      # when randomly generating stimulus values for types, how much standard deviation to use? 
-
-probIgnore <- 0   # probability that an individual ignores repetitions - ignore/not sort of represents sampling with/without replacement
-tokensd <- .01    # when randomly generating stimulus values for tokens, how much standard deviation to use? tokensd < typesd
-# expect the sd to be greater than experiment 1 (.009) because images are now reflected/rotated
-
-ignores <- rbinom(nits, size = 1, prob = probIgnore)           # if 1 -> on that iteration, ignore repetition
-ignores <- matrix(rep(ignores, nt), nrow = nt, byrow = TRUE)   # just copy the ignores across 3 rows to conform to following ifelse condition
-
 # --------------------------- generate predictions ------------------------------ #
-for( i in 1:nits ) {     # average out predictions over nits iterations
+# use a loop to test different parameter values
+for (a in 1:parits) {
   
-  train1 <- rnorm(1, mean = target1, sd = typesd) # generates number randomly from a uniform distribution, then /.2 makes it smallish, then +.4 to approach .5
-  train2 <- rnorm(1, mean = target2, sd = typesd) # 2nd training exemplar
-  train3 <- rnorm(1, mean = target3, sd = typesd) # 3rd training exemplar
-
-  # generalisation from adding tokens 
-  train1a <- rnorm(1, mean = train1, sd = tokensd)  # the repetition is constrained to be within a range around the first training item
-  train1b <- rnorm(1, mean = train1, sd = tokensd)  # the above is true for all tokens
-  train1c <- rnorm(1, mean = train1, sd = tokensd)
-
-  train2a <- rnorm(1, mean = train2, sd = tokensd)  # the repetition is constrained to be within a range around the second training item
-  train2b <- rnorm(1, mean = train2, sd = tokensd)  # the above is true for all tokens
-  train2c <- rnorm(1, mean = train2, sd = tokensd)
-
-  train3a <- rnorm(1, mean = train3, sd = tokensd)  # the repetition is constrained to be within a range around the third training item
-  train3b <- rnorm(1, mean = train3, sd = tokensd)  # the above is true for all tokens
-  train3c <- rnorm(1, mean = train3, sd = tokensd)
-
-  # generalisation from adding types
-  # testH <- (max(c(train1, train2, train3)) + .01)
-  # test <- c(testH, testH+((.9-testH)/2), .9)
+  # sample different parameter values
+  # theta values to represent sampling assumptions/informational value
+  thetaType <- runif(1, min = .2, max = .4)                           # value used to discuss modeling results = .3
+  thetaToken <- runif(1, min = thetaType - .2, max = thetaType - .1)  # value in paper = .15
+  # thetaRep <- thetaRep2 <- thetaRep3 <- thetaToken
+  thetaRep3 <- thetaToken
+  thetaRep <- thetaRep3 - .1
+  thetaRep2 <- thetaRep3 - .05
   
-  bg2[,i] <- (BayesGen(train1, test, thetaType, phi) +
-              BayesGen(train1a, test, thetaRep, phi))/2
+  # stimulus values for types
+  targetsM <- runif(1, .2, .6) # select the centre of a uniform distribution, from which to sample types
+  targetsW <- runif(1, 0, .2)  # select the width of a uniform distribution, from which to sample types
   
-  bg22[,i] <- (BayesGen(c(train1, train2), test, thetaType, phi) +
-                 BayesGen(c(train1a, train2a), test, thetaRep2, phi))/2
+  targets <- runif(3, targetsM - targetsW, targetsM + targetsW) # sample from that uniform distribution
+  targets <- sort(targets)
+  target1 <- targets[2]  # value in paper = .45
+  target2 <- targets[3]                   # .46
+  target3 <- targets[1]                   # .44
+
+  # when randomly generating stimulus values for types/tokens, how much standard deviation to use?
+  typesd <- runif(1, .01, .1)             # .06
+  tokensd <- typesd/6                     # .01, > experiment 1 (.009) because images are now reflected/rotated
+
+  bg2 <- matrix(data = c(rep(0, nits*nt)),   # create enough 0s for each iteration x each test item - to be filled with predicted generalisation probability
+                nrow = nt)                   # 1 row for each test item (high, medium, low sim)
+  bg4 <- bg44 <- bg444 <- bg222 <- bg22 <- bg2   # make all others in the same way - need one matrix per condition
+
+      for( i in 1:nits ) {     # average out predictions over nits iterations
+        
+        train1 <- rnorm(1, mean = target1, sd = typesd) # generates number randomly from a uniform distribution, then /.2 makes it smallish, then +.4 to approach .5
+        train2 <- rnorm(1, mean = target2, sd = typesd) # 2nd training exemplar
+        train3 <- rnorm(1, mean = target3, sd = typesd) # 3rd training exemplar
+      
+        # generalisation from adding tokens 
+        train1a <- rnorm(1, mean = train1, sd = tokensd)  # the repetition is constrained to be within a range around the first training item
+        train1b <- rnorm(1, mean = train1, sd = tokensd)  # the above is true for all tokens
+        train1c <- rnorm(1, mean = train1, sd = tokensd)
+      
+        train2a <- rnorm(1, mean = train2, sd = tokensd)  # the repetition is constrained to be within a range around the second training item
+        train2b <- rnorm(1, mean = train2, sd = tokensd)  # the above is true for all tokens
+        train2c <- rnorm(1, mean = train2, sd = tokensd)
+      
+        train3a <- rnorm(1, mean = train3, sd = tokensd)  # the repetition is constrained to be within a range around the third training item
+        train3b <- rnorm(1, mean = train3, sd = tokensd)  # the above is true for all tokens
+        train3c <- rnorm(1, mean = train3, sd = tokensd)
+      
+        # determine test categories
+        testH <- (max(c(train1, train2, train3)) + .05)
+        test <- c(testH, testH+((.9-testH)/2), .9)
+        
+        bg2[,i] <- (BayesGen(train1, test, thetaType, phi) +
+                    BayesGen(train1a, test, thetaToken, phi))/2
+        
+        bg22[,i] <- (BayesGen(c(train1, train2), test, thetaType, phi) +
+                       BayesGen(c(train1a, train2a), test, thetaRep2, phi))/2
+        
+        bg222[,i] <- (BayesGen(c(train1, train2, train3), test, thetaType, phi) +
+                      BayesGen(c(train1a, train2a, train3a), test, thetaRep3, phi))/2
+      
+        bg4[,i] <- (BayesGen(train1, test, thetaType, phi))*1/4 +
+                    (BayesGen(c(train1a, train1b, train1c), test, thetaRep, phi))*3/4
+      
+        bg44[,i] <- (BayesGen(c(train1, train2), test, thetaType, phi))*2/8 +
+                     (BayesGen(c(train1a, train1b, train1c, train2a, train2b, train2c), test, thetaRep2, phi))*6/8
+      
+        bg444[,i] <- (BayesGen(c(train1, train2, train3), test, thetaType, phi))*3/12 +
+                      (BayesGen(c(train1a, train1b, train1c, train2a, train2b, train2c, train3a, train3b, train3c), test, thetaRep3, phi))*9/12
+      }
+
+  bg2 <- rowMeans(bg2)          # calculate the mean of the N(nits) generalisation probabilities for each similarity category
+  bg22 <- rowMeans(bg22)        # for 11 condition
+  bg222 <- rowMeans(bg222)      # for 111 condition etc.,
+  bg4 <- rowMeans(bg4)
+  bg44 <- rowMeans(bg44)
+  bg444 <- rowMeans(bg444)
   
-  bg222[,i] <- (BayesGen(c(train1, train2, train3), test, thetaType, phi) +
-                BayesGen(c(train1a, train2a, train3a), test, thetaRep3, phi))/2
-
-  bg4[,i] <- (BayesGen(train1, test, thetaType, phi))*1/4 +
-              (BayesGen(c(train1a, train1b, train1c), test, thetaRep, phi))*3/4
-
-  bg44[,i] <- (BayesGen(c(train1, train2), test, thetaType, phi))*2/8 +
-               (BayesGen(c(train1a, train1b, train1c, train2a, train2b, train2c), test, thetaRep2, phi))*6/8
-
-  bg444[,i] <- (BayesGen(c(train1, train2, train3), test, thetaType, phi))*3/12 +
-                (BayesGen(c(train1a, train1b, train1c, train2a, train2b, train2c, train3a, train3b, train3c), test, thetaRep3, phi))*9/12
+  typesMed[a,1] <- bg2[2] > bg222[2] # adding types with 2 tokens decreases gen at med categories
+  typesMed[a,2] <- bg4[2] > bg444[2] # adding types with 4 tokens decreases gen at med categories
+  
+  typesLow[a,1] <- bg2[3] > bg222[3] # adding types with 2 tokens decreases gen at med categories
+  typesLow[a,2] <- bg4[3] > bg444[3] # adding types with 4 tokens decreases gen at med categories
+  
+  gap <- .15
+  tokensHigh[a,1] <- between(bg4[1], left = bg2[1] - gap/2, right = bg2[1] + gap/2)
+  tokensHigh[a,2] <- between(bg44[1], left = bg22[1] - gap/2, right = bg22[1] + gap/2)
+  tokensHigh[a,3] <- between(bg444[1], left = bg222[1] - gap/2, right = bg222[1] + gap/2)
+  
+  tokensMed[a,1] <- between(bg4[2], left = bg2[2] - gap/2, right = bg2[2] + gap/2)
+  tokensMed[a,2] <- between(bg44[2], left = bg22[2] - gap/2, right = bg22[2] + gap/2)
+  tokensMed[a,3] <- between(bg444[2], left = bg222[2] - gap/2, right = bg222[2] + gap/2)
+  
+  tokensLow[a,1] <- between(bg4[3], left = bg2[3] - gap/2, right = bg2[3] + gap/2)
+  tokensLow[a,2] <- between(bg44[3], left = bg22[3] - gap/2, right = bg22[3] + gap/2)
+  tokensLow[a,3] <- between(bg444[3], left = bg222[3] - gap/2, right = bg222[3] + gap/2)
+  
+  parValues[a,] <- c(thetaType, thetaToken, target1, target2, target3, typesd, tokensd)
+  
 }
+cbind(typesMed, parValues)
+typesLow
 
-
-bg2 <- rowMeans(bg2)          # calculate the mean of the N(nits) generalisation probabilities for each similarity category
-bg22 <- rowMeans(bg22)        # for 11 condition
-bg222 <- rowMeans(bg222)      # for 111 condition etc.,
-bg4 <- rowMeans(bg4)
-bg44 <- rowMeans(bg44)
-bg444 <- rowMeans(bg444)
+tokensHigh
+tokensMed
+tokensLow
 
 # vals <- as.data.frame(cbind(test, bg2, bg22, bg222, bg4, bg44, bg444))           # combine the similarity category values with generalisation probs for each condtiion
 # vals <- gather(vals, key = "genCond", value = "genProb", bg2:bg444)   # gather so each row is a different generalisation probability
