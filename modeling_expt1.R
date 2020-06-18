@@ -18,62 +18,62 @@ source("./BayesGen-BX.R")
 phi <- 1                 # phi = 1: uniform prior over hypotheses, phi > 1: greater prior belief in larger hypotheses
 nits <- 1000             # number of iterations
 
-# ------ initial values for parameters ---------------- #
-# THETA to represent sampling assumptions/informational value
-thetaType <- .2   # theta = 1: strong sampling, theta = 0: weak sampling
-thetaToken <- .05
-
-# TRAINING items
-target1 <- .45    # first type
-target2 <- .46    # second type
-target3 <- .44    # third type
-target4 <- .47    # 4th type
-
-typesd <- .06     # when randomly generating stimulus values for types, how much standard deviation to use? 
-tokensd <- .009   # when randomly generating stimulus values for tokens, how much standard deviation to use? tokensd < typesd
-
-# TEST items
+# initial values for test items - overriden later on, depends on randomly-sampled type values
 test <- c(.51, .707, .9) # similarity values for high-, med-, low-sim test/generalization items
 nt <- length(test)       # number of test items
 
 # --------------------------- generate predictions ------------------------------ #
 parits <- 10  # how many times do I want to test out different parameter values?
 
-# testPattern1 <- matrix(data = c(rep(0, parits*3)), nrow = parits)
-# testPattern2 <- matrix(data = c(rep(0, parits*3)), nrow = parits)
+typesCols <- c("1token", "2tokens", "3tokens")
+typesHigh <- matrix(data = c(rep(0, parits*3)), nrow = parits)
+colnames(typesHigh) <- typesCols
 
-typesIncreaseH <- matrix(data = c(rep(0, parits)), nrow = parits)
-typesDecreaseM <- matrix(data = c(rep(0, parits)), nrow = parits)
-typesDecreaseL <- matrix(data = c(rep(0, parits)), nrow = parits)
+typesMed <- typesHigh
+typesLow <- typesHigh
+
+tokensCols <- c("1type", "2types", "3types")
+tokensHigh <- typesHigh
+colnames(tokensHigh) <- tokensCols
+
+tokensMed <- tokensHigh
+tokensLow <- tokensHigh
+
+pars <- c("thetaType", "thetaToken", "target1", "target2", "target3", "target4", "typesd", "tokensd")
+parValues <- matrix(data = c(rep(0, parits*length(pars))), nrow = parits)
+colnames(parValues) <- pars
 
 # use a loop to test different parameter values
 for (a in 1:parits) {
   
   # sample different parameter values
-  thetaType <- runif(1, min = .2, max = .4)
-  thetaToken <- runif(1, min = thetaType - .2, max = thetaType - .1)
+  # theta values to represent sampling assumptions/informational value
+  thetaType <- runif(1, min = .2, max = .4)                           # value used to discuss modeling results = .3
+  thetaToken <- runif(1, min = thetaType - .2, max = thetaType - .1)  # value in paper = .05
   
-  targetsM <- runif(1, .2, .6)
-  targetsW <- runif(1, 0, .2)
+  # stimulus values for types
+  targetsM <- runif(1, .2, .6) # select the centre of a uniform distribution, from which to sample types
+  targetsW <- runif(1, 0, .2)  # select the width of a uniform distribution, from which to sample types
   
-  targets <- runif(4, targetsM - targetsW, targetsM + targetsW)
+  targets <- runif(4, targetsM - targetsW, targetsM + targetsW) # sample from that uniform distribution
   targets <- sort(targets)
-  target1 <- targets[2]
-  target2 <- targets[3]
-  target3 <- targets[1]
-  target4 <- targets[4]
+  target1 <- targets[2]  # value in paper = .45
+  target2 <- targets[3]                   # .46
+  target3 <- targets[1]                   # .44
+  target4 <- targets[4]                   # .47
   
-  typesd <- runif(1, .01, .1)
-  tokensd <- typesd/6
+  # when randomly generating stimulus values for types/tokens, how much standard deviation to use?
+  typesd <- runif(1, .01, .1)             # .06
+  tokensd <- typesd/6                     # .009
 
+  bg1 <- matrix(data = c(rep(0, nits*nt)),   # create enough 0s for each iteration to fill with predicted generalisation probability
+                nrow = nt)                   # 1 row for each test item (high, medium, low sim)
+  bg11 <- bg111 <- bg1111 <- bg2 <- bg3 <- bg4 <- bg1    # need one matrix per condition
+  bg2v1 <- bg2v2 <- bg3v2 <- bg4v2 <- bg1
+  bg31 <- bg21 <- bg211 <- bg2
+  
     for( i in 1:nits ) {     # average out predictions over nits iterations
-      
-      bg1 <- matrix(data = c(rep(0, nits*nt)),   # create enough 0s for each iteration to fill with predicted generalisation probability
-                    nrow = nt)                   # 1 row for each test item (high, medium, low sim)
-      bg11 <- bg111 <- bg1111 <- bg2 <- bg3 <- bg4 <- bg1    # need one matrix per condition
-      bg2v1 <- bg2v2 <- bg3v2 <- bg4v2 <- bg1
-      bg31 <- bg21 <- bg211 <- bg2
-      
+    
       train1 <- rnorm(1, mean = target1, sd = typesd) # generates value for 1st type from a normal distribution
       train2 <- rnorm(1, mean = target2, sd = typesd)
       train3 <- rnorm(1, mean = target3, sd = typesd)
@@ -114,40 +114,58 @@ for (a in 1:parits) {
                     (BayesGen(c(train1a, train1b), test, thetaToken, phi))*2/4
     }
     
-    # ----------------------- plot predictions ------------------------------ #
     # ------------------ effect of adding types  ---------------------------- #
     bg1 <- rowMeans(bg1)          # calculate the mean of the N(nits) generalisation probabilities for each similarity category
     bg11 <- rowMeans(bg11)        # for 11 condition
     bg111 <- rowMeans(bg111)      # for 111 condition etc.,
     bg1111 <- rowMeans(bg1111)
-    
-    vals <- as.data.frame(cbind(test, bg1, bg11, bg111, bg1111))           # combine the similarity category values with generalisation probs for each condtiion
-    vals <- gather(vals, key = "genCond", value = "genProb", bg1:bg1111)   # gather so each row is a different generalisation probability
-    
-    # typeIncrease1 <- vals[1,3] < vals[4,3]  # bg1[1] < bg11[1]
-    # typeIncrease2 <- vals[4,3] < vals[7,3]
-    # typeIncrease3 <- vals[7,3] < vals[10,3]
-    # 
-    # typeDecreaseM1 <- bg1[2] > bg11[2]
-    # typeDecreaseM2 <- bg11[2] > bg111[2]
-    # typeDecreaseM3 <- bg111[2] > bg1111[2]
-    # 
-    # pattern1 <- c(typeIncrease1, typeIncrease2, typeIncrease3)
-    # pattern2 <- c(typeDecreaseM1, typeDecreaseM2, typeDecreaseM3)
-    # 
-    # testPattern1[a,] <- pattern1
-    # testPattern2[a,] <- pattern2
-    typesIncreaseH[a,] <- bg1[1] < bg1111[1]  # adding types (from 1 -> 1111) increases gen at high-sim category?
-    typesDecreaseM[a,] <- bg1[2] > bg1111[2]  # adding types decreases gen at medium-sim category?
-    typesDecreaseL[a,] <- bg1[3] > bg1111[3]  # adding types decreases gen at low-sim categories?
+
+    bg2 <- rowMeans(bg2)
+    bg21 <- rowMeans(bg21)
+    bg211 <- rowMeans(bg211)
+
+    bg3 <- rowMeans(bg3)
+    bg31 <- rowMeans(bg31)
+
+    typesHigh[a,1] <- bg1[1] < bg1111[1]  # adding types (from 1 -> 1111) increases gen at high-sim category?
+    typesHigh[a,2] <- bg2[1] < bg211[1]   # adding types (From 2 -> 211) increases gen at high-sim category?
+    typesHigh[a,3] <- bg3[1] < bg31[1]    # adding types (from 3 -> 31) increase gen at high-sim category?
+
+    typesMed[a,1] <- bg1[2] > bg1111[2]  # adding types decreases gen at medium-sim category?
+    typesMed[a,2] <- bg2[2] > bg211[2]
+    typesMed[a,3] <- bg3[2] > bg31[2]
+
+    typesLow[a,1] <- bg1[3] > bg1111[3]  # adding types decreases gen at low-sim categories?
+    typesLow[a,2] <- bg2[3] > bg211[3]  # adding types decreases gen at low-sim categories?
+    typesLow[a,3] <- bg3[3] > bg31[3]  # adding types decreases gen at low-sim categories?
+
+    tokensHigh[a,1] <- bg1[1] >= bg4[1]  # adding tokens decreases or does not change generalisation
+    tokensHigh[a,2] <- bg11[1] >= bg31[1]
+    tokensHigh[a,3] <- bg111[1] >= bg211[1]
+
+    tokensMed[a,1] <- bg1[2] >= bg4[2]  # adding tokens decreases or does not change generalisation
+    tokensMed[a,2] <- bg11[2] >= bg31[2]
+    tokensMed[a,3] <- bg111[2] >= bg211[2]
+
+    tokensLow[a,1] <- bg1[3] >= bg4[3]  # adding tokens decreases or does not change generalisation
+    tokensLow[a,2] <- bg11[3] >= bg31[3]
+    tokensLow[a,3] <- bg111[3] >= bg211[3]
+
+    parValues[a,] <- c(thetaType, thetaToken, target1, target2, target3, target4, typesd, tokensd)
 }
 
-sum(typesIncreaseH)/parits  # how often the pattern occurred (e.g., 1 high-sim gen rating < 1111 high-sim gen rating)
-sum(typesDecreaseM)/parits
-sum(typesDecreaseL)/parits
+cbind(typesHigh, parValues)
+typesMed
+typesLow
 
-# 
-# 
+tokensHigh
+cbind(tokensMed, parValues)
+tokensLow
+
+sum(typesHigh[,1])/parits  # how often the pattern occurred (e.g., 1 high-sim gen rating < 1111 high-sim gen rating)
+sum(typesHigh[,2])/parits  # how often the pattern occurred (e.g., 1 high-sim gen rating < 1111 high-sim gen rating)
+sum(typesHigh[,3])/parits  # how often the pattern occurred (e.g., 1 high-sim gen rating < 1111 high-sim gen rating)
+
 # trains <- c(train1, train2, train3, train4)        # collate the training stimulus values
 # trains <- as.data.frame(trains)
 # 
@@ -165,9 +183,6 @@ sum(typesDecreaseL)/parits
 #   theme(legend.position = c(.8, .7))
 # 
 # # # ----------------- effect of adding tokens ------------------------ #
-# bg2 <- rowMeans(bg2)
-# bg3 <- rowMeans(bg3)
-# bg4 <- rowMeans(bg4)
 # 
 # valsTokes <- as.data.frame(cbind(test, bg1, bg2, bg3, bg4))
 # valsTokes <- gather(valsTokes, key = "genCond", value = "genProb", -test)
@@ -189,8 +204,6 @@ sum(typesDecreaseL)/parits
 #   theme(legend.position = c(.8, .7))
 # 
 # # adding types with 2 tokens
-# bg21 <- rowMeans(bg21)
-# bg211 <- rowMeans(bg211)
 # 
 # valsTy1 <- as.data.frame(cbind(test, bg2, bg21, bg211))
 # valsTy1 <- gather(valsTy1, key = "genCond", value = "genProb", bg2:bg211)
