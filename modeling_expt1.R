@@ -138,17 +138,31 @@ for (a in 1:parits) {
     typesLow[a,2] <- bg2[3] > bg211[3]  # adding types decreases gen at low-sim categories?
     typesLow[a,3] <- bg3[3] > bg31[3]  # adding types decreases gen at low-sim categories?
 
-    tokensHigh[a,1] <- bg1[1] >= bg4[1]  # adding tokens decreases or does not change generalisation
-    tokensHigh[a,2] <- bg11[1] >= bg31[1]
-    tokensHigh[a,3] <- bg111[1] >= bg211[1]
+    
+    gap <- .05
+    tokensHigh[a,1] <- between(bg4[1], left = 0, right = bg1[1] + gap)
+    tokensHigh[a,2] <- between(bg31[1], left = 0, right = bg11[1] + gap)
+    tokensHigh[a,3] <- between(bg211[1], left = 0, right = bg111[1] + gap)
+    
+    # tokensHigh[a,1] <- bg1[1] >= bg4[1]  # adding tokens decreases or does not change generalisation
+    # tokensHigh[a,2] <- bg11[1] >= bg31[1]
+    # tokensHigh[a,3] <- bg111[1] >= bg211[1]
 
-    tokensMed[a,1] <- bg1[2] >= bg4[2]  # adding tokens decreases or does not change generalisation
-    tokensMed[a,2] <- bg11[2] >= bg31[2]
-    tokensMed[a,3] <- bg111[2] >= bg211[2]
-
-    tokensLow[a,1] <- bg1[3] >= bg4[3]  # adding tokens decreases or does not change generalisation
-    tokensLow[a,2] <- bg11[3] >= bg31[3]
-    tokensLow[a,3] <- bg111[3] >= bg211[3]
+    tokensMed[a,1] <- between(bg4[2], left = 0, right = bg1[2] + gap)
+    tokensMed[a,2] <- between(bg31[2], left = 0, right = bg11[2] + gap)
+    tokensMed[a,3] <- between(bg211[2], left = 0, right = bg111[2] + gap)
+    
+    # tokensMed[a,1] <- bg1[2] >= bg4[2]  # adding tokens decreases or does not change generalisation
+    # tokensMed[a,2] <- bg11[2] >= bg31[2]
+    # tokensMed[a,3] <- bg111[2] >= bg211[2]
+    
+    tokensLow[a,1] <- between(bg4[3], left = 0, right = bg1[3] + gap)
+    tokensLow[a,2] <- between(bg31[3], left = 0, right = bg11[3] + gap)
+    tokensLow[a,3] <- between(bg211[3], left = 0, right = bg111[3] + gap)
+    
+    # tokensLow[a,1] <- bg1[3] >= bg4[3]  # adding tokens decreases or does not change generalisation
+    # tokensLow[a,2] <- bg11[3] >= bg31[3]
+    # tokensLow[a,3] <- bg111[3] >= bg211[3]
 
     parValues[a,] <- c(thetaType, thetaToken, target1, target2, target3, target4, typesd, tokensd)
 }
