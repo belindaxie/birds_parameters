@@ -48,8 +48,8 @@ for (a in 1:parits) {
   
   # sample different parameter values
   # theta values to represent sampling assumptions/informational value
-  thetaType <- runif(1, min = .2, max = .4)                           # value used to discuss modeling results = .3
-  thetaToken <- runif(1, min = thetaType - .2, max = thetaType - .1)  # value in paper = .15
+  thetaType <- runif(1, min = .1, max = .5)          # value used to discuss modeling results = .3
+  thetaToken <- runif(1, min = .1, max = thetaType)  # value in paper = .15
   # thetaRep <- thetaRep2 <- thetaRep3 <- thetaToken
   thetaRep3 <- thetaToken
   thetaRep <- thetaRep3 - .1
@@ -57,7 +57,7 @@ for (a in 1:parits) {
   
   # stimulus values for types
   targetsM <- runif(1, .2, .6) # select the centre of a uniform distribution, from which to sample types
-  targetsW <- runif(1, 0, .2)  # select the width of a uniform distribution, from which to sample types
+  targetsW <- runif(1, .0001, .2)  # select the width of a uniform distribution, from which to sample types
   
   targets <- runif(3, targetsM - targetsW, targetsM + targetsW) # sample from that uniform distribution
   targets <- sort(targets)
@@ -128,7 +128,7 @@ for (a in 1:parits) {
   typesLow[a,1] <- bg2[3] > bg222[3] # adding types with 2 tokens decreases gen at med categories
   typesLow[a,2] <- bg4[3] > bg444[3] # adding types with 4 tokens decreases gen at med categories
   
-  gap <- .15
+  gap <- .1
   tokensHigh[a,1] <- between(bg4[1], left = bg2[1] - gap/2, right = bg2[1] + gap/2)
   tokensHigh[a,2] <- between(bg44[1], left = bg22[1] - gap/2, right = bg22[1] + gap/2)
   tokensHigh[a,3] <- between(bg444[1], left = bg222[1] - gap/2, right = bg222[1] + gap/2)
@@ -144,7 +144,8 @@ for (a in 1:parits) {
   parValues[a,] <- c(thetaType, thetaToken, target1, target2, target3, typesd, tokensd)
   
 }
-cbind(typesMed, parValues)
+# cbind(typesMed, parValues)
+typesMed
 typesLow
 
 tokensHigh

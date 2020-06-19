@@ -47,12 +47,12 @@ for (a in 1:parits) {
   
   # sample different parameter values
   # theta values to represent sampling assumptions/informational value
-  thetaType <- runif(1, min = .2, max = .4)                           # value used to discuss modeling results = .3
-  thetaToken <- runif(1, min = thetaType - .2, max = thetaType - .1)  # value in paper = .15
+  thetaType <- runif(1, min = .1, max = .5)          # value used to discuss modeling results = .3
+  thetaToken <- runif(1, min = .1, max = thetaType)  # value in paper = .15
   
   # stimulus values for types
   targetsM <- runif(1, .2, .6) # select the centre of a uniform distribution, from which to sample types
-  targetsW <- runif(1, 0, .2)  # select the width of a uniform distribution, from which to sample types
+  targetsW <- runif(1, .0001, .2)  # select the width of a uniform distribution, from which to sample types
   
   targets <- runif(4, targetsM - targetsW, targetsM + targetsW) # sample from that uniform distribution
   targets <- sort(targets)
@@ -167,12 +167,14 @@ for (a in 1:parits) {
     parValues[a,] <- c(thetaType, thetaToken, target1, target2, target3, target4, typesd, tokensd)
 }
 
-cbind(typesHigh, parValues)
+# cbind(typesHigh, parValues)
+typesHigh
 typesMed
 typesLow
 
 tokensHigh
-cbind(tokensMed, parValues)
+tokensMed
+# cbind(tokensMed, parValues)
 tokensLow
 
 sum(typesHigh[,1])/parits  # how often the pattern occurred (e.g., 1 high-sim gen rating < 1111 high-sim gen rating)
