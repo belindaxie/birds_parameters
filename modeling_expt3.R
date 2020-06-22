@@ -13,16 +13,17 @@ rm(list = ls())
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 source("./BayesGen-BX.R")
+set.seed(1)
 
 # ------------ PARAMETERS ----------------------------- #
 phi <- 1                 # phi = 1: uniform prior over hypotheses, phi > 1: greater prior belief in larger hypotheses
 nits <- 1000             # number of iterations
 
 # --------------------------- generate predictions ------------------------------ #
-parits <- 10  # how many times do I want to test out different parameter values?
+parits <- 3000  # how many times do I want to test out different parameter values?
 
 test <- c(.49, .7, .9)  # this is overridden in l. 50
-nt <- length(test)                                    # number of test items
+nt <- length(test)      # number of test items
 
 namescol <- c("typelabel", "tokenlabel")
 decreaseHigh <- matrix(data = c(rep(0, parits*2)), nrow = parits)
@@ -44,7 +45,7 @@ for (a in 1:parits) {
   thetaToken <- runif(1, min = .1, max = thetaType)  # value in paper = .15 
   # stimulus values for types
   targetsM <- runif(1, .2, .6) # select the centre of a uniform distribution, from which to sample types
-  targetsW <- runif(1, .0001, .2)  # select the width of a uniform distribution, from which to sample types
+  targetsW <- runif(1, .005, .2)  # select the width of a uniform distribution, from which to sample types
   
   targets <- runif(6, targetsM - targetsW, targetsM + targetsW) # sample from that uniform distribution
   targets <- sort(targets)
@@ -132,12 +133,20 @@ for (a in 1:parits) {
   parValues[a,] <- c(thetaType, thetaToken, target1, target2, target3, target4, target5, target6, typesd, tokensd)
   
 }
-parValues
+# parValues
 
 decreaseHigh  # false when training items are quite high (>.5)?
 decreaseMed
 decreaseLow
 
+sum(decreaseHigh[,1]) # adding type-label instances increases gen at high-sim category
+sum(decreaseHigh[,2]) # adding token-label instances increases gen at high-sim category
+
+sum(decreaseMed[,1]) # adding type-label instances increases gen at med-sim category
+sum(decreaseMed[,2]) # adding token-label instances increases gen at med-sim category
+
+sum(decreaseLow[,1]) # adding type-label instances increases gen at low-sim category
+sum(decreaseLow[,2]) # adding token-label instances increases gen at low-sim category
 
 # # old repetitions
 # vals <- as.data.frame(cbind(test, bg2old, bg3old, bg4old, bg5old, bg6old)) # combine the similarity category values with generalisation probs for each condtiion

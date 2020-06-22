@@ -12,19 +12,20 @@ rm(list = ls())
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 source("./BayesGen-BX.R")
+set.seed(1)
 
 # ------------ PARAMETERS ----------------------------- #
 phi <- 1                 # phi = 1: uniform prior over hypotheses, phi > 1: greater prior belief in larger hypotheses
 nits <- 1000             # number of iterations
 
 # --------------------------- generate predictions ------------------------------ #
-parits <- 10  # how many times do I want to test out different parameter values?
+parits <- 3000  # how many times do I want to test out different parameter values?
 
 typesCols <- c("2tokens", "4tokens")
-typesMed <- matrix(data = c(rep(0, parits*2)), nrow = parits)
-colnames(typesMed) <- typesCols
+typesHigh <- matrix(data = c(rep(0, parits*2)), nrow = parits)
+colnames(typesHigh) <- typesCols
 
-typesLow <- typesMed
+typesLow <- typesMed <- typesHigh
 
 tokensCols <- c("1type", "2types", "3types")
 tokensHigh <- matrix(data = c(rep(0, parits*3)), nrow = parits)
@@ -35,9 +36,6 @@ tokensLow <- tokensMed <- tokensHigh
 pars <- c("thetaType", "thetaToken", "target1", "target2", "target3", "typesd", "tokensd")
 parValues <- matrix(data = c(rep(0, parits*length(pars))), nrow = parits)
 colnames(parValues) <- pars
-# thetaRep3 <- .15
-# thetaRep <- thetaRep3 - .1
-# thetaRep2 <- thetaRep3 - .05
 
 test <- c(.51, .707, .9)  # this is overridden in l. 47
 nt <- length(test)                                    # number of test items
@@ -50,14 +48,14 @@ for (a in 1:parits) {
   # theta values to represent sampling assumptions/informational value
   thetaType <- runif(1, min = .1, max = .5)          # value used to discuss modeling results = .3
   thetaToken <- runif(1, min = .1, max = thetaType)  # value in paper = .15
-  # thetaRep <- thetaRep2 <- thetaRep3 <- thetaToken
-  thetaRep3 <- thetaToken
-  thetaRep <- thetaRep3 - .1
-  thetaRep2 <- thetaRep3 - .05
+  thetaRep <- thetaRep2 <- thetaRep3 <- thetaToken
+  # thetaRep3 <- thetaToken
+  # thetaRep <- thetaRep3 - .1
+  # thetaRep2 <- thetaRep3 - .05
   
   # stimulus values for types
   targetsM <- runif(1, .2, .6) # select the centre of a uniform distribution, from which to sample types
-  targetsW <- runif(1, .0001, .2)  # select the width of a uniform distribution, from which to sample types
+  targetsW <- runif(1, .005, .2)  # select the width of a uniform distribution, from which to sample types
   
   targets <- runif(3, targetsM - targetsW, targetsM + targetsW) # sample from that uniform distribution
   targets <- sort(targets)
@@ -94,7 +92,7 @@ for (a in 1:parits) {
       
         # determine test categories
         testH <- (max(c(train1, train2, train3)) + .05)
-        test <- c(testH, testH+((.9-testH)/2), .9)
+        test <- c(testH, testH+((.95-testH)/2), .95)
         
         bg2[,i] <- (BayesGen(train1, test, thetaType, phi) +
                     BayesGen(train1a, test, thetaToken, phi))/2
@@ -122,6 +120,9 @@ for (a in 1:parits) {
   bg44 <- rowMeans(bg44)
   bg444 <- rowMeans(bg444)
   
+  typesHigh[a,1] <- bg2[1] < bg222[1] # adding types with 2 tokens increases gen at high categories
+  typesHigh[a,2] <- bg4[1] < bg444[1]
+  
   typesMed[a,1] <- bg2[2] > bg222[2] # adding types with 2 tokens decreases gen at med categories
   typesMed[a,2] <- bg4[2] > bg444[2] # adding types with 4 tokens decreases gen at med categories
   
@@ -144,13 +145,38 @@ for (a in 1:parits) {
   parValues[a,] <- c(thetaType, thetaToken, target1, target2, target3, typesd, tokensd)
   
 }
+
+sum(typesHigh[,1]) # adding types with 2 tokens increases gen at high categories
+sum(typesHigh[,2]) # adding types with 4 tokens increases gen at high categories
+
+sum(typesMed[,1])
+sum(typesMed[,2])
+
+sum(typesLow[,1])
+sum(typesLow[,2])
 # cbind(typesMed, parValues)
+typesHigh
 typesMed
 typesLow
+
+head(tokensHigh)
+sum(tokensHigh[,1])  # adding tokens with 1 type does not change gen at high categories - it DECREASES GEN
+sum(tokensHigh[,2])  # adding tokens with 2 types does not change gen at high categories
+sum(tokensHigh[,3])  # adding tokens with 3 types does not change gen at high categories
+
+sum(tokensMed[,1])  # adding tokens with 1 type does not change gen at med categories - it DECREASES GEN
+sum(tokensMed[,2])  # adding tokens with 2 types does not change gen at med categories
+sum(tokensMed[,3])  # adding tokens with 3 types does not change gen at med categories
+
+sum(tokensLow[,1])  # adding tokens with 1 type does not change gen at low categories - it DECREASES GEN
+sum(tokensLow[,2])  # adding tokens with 2 types does not change gen at low categories
+sum(tokensLow[,3])  # adding tokens with 3 types does not change gen at low categories
 
 tokensHigh
 tokensMed
 tokensLow
+
+
 
 # vals <- as.data.frame(cbind(test, bg2, bg22, bg222, bg4, bg44, bg444))           # combine the similarity category values with generalisation probs for each condtiion
 # vals <- gather(vals, key = "genCond", value = "genProb", bg2:bg444)   # gather so each row is a different generalisation probability

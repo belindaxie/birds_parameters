@@ -13,6 +13,7 @@ rm(list = ls())
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 source("./BayesGen-BX.R")
+set.seed(1)
 
 # ------------ PARAMETERS ----------------------------- #
 phi <- 1                 # phi = 1: uniform prior over hypotheses, phi > 1: greater prior belief in larger hypotheses
@@ -23,7 +24,7 @@ test <- c(.51, .707, .9) # similarity values for high-, med-, low-sim test/gener
 nt <- length(test)       # number of test items
 
 # --------------------------- generate predictions ------------------------------ #
-parits <- 10  # how many times do I want to test out different parameter values?
+parits <- 3000  # how many times do I want to test out different parameter values?
 
 typesCols <- c("1token", "2tokens", "3tokens")
 typesHigh <- matrix(data = c(rep(0, parits*3)), nrow = parits)
@@ -52,7 +53,7 @@ for (a in 1:parits) {
   
   # stimulus values for types
   targetsM <- runif(1, .2, .6) # select the centre of a uniform distribution, from which to sample types
-  targetsW <- runif(1, .0001, .2)  # select the width of a uniform distribution, from which to sample types
+  targetsW <- runif(1, .005, .2)  # select the width of a uniform distribution, from which to sample types
   
   targets <- runif(4, targetsM - targetsW, targetsM + targetsW) # sample from that uniform distribution
   targets <- sort(targets)
@@ -168,18 +169,40 @@ for (a in 1:parits) {
 }
 
 # cbind(typesHigh, parValues)
-typesHigh
-typesMed
-typesLow
+# typesHigh
+# typesMed
+# typesLow
+# 
+# tokensHigh
+# tokensMed
+# tokensLow
 
-tokensHigh
-tokensMed
-# cbind(tokensMed, parValues)
-tokensLow
+# ------ how many times did adding types -> tightening? ------ #
+sum(typesHigh[,1])  # how many times the pattern occurred (1 high-sim gen rating < 1111 high-sim gen rating)
+sum(typesHigh[,2])  # how many times the pattern occurred (2 high-sim gen rating < 211 high-sim gen rating)
+sum(typesHigh[,3])  # how many times the pattern occurred (3 high-sim gen rating < 31 high-sim gen rating)
 
-sum(typesHigh[,1])/parits  # how often the pattern occurred (e.g., 1 high-sim gen rating < 1111 high-sim gen rating)
-sum(typesHigh[,2])/parits  # how often the pattern occurred (e.g., 1 high-sim gen rating < 1111 high-sim gen rating)
-sum(typesHigh[,3])/parits  # how often the pattern occurred (e.g., 1 high-sim gen rating < 1111 high-sim gen rating)
+sum(typesMed[,1])  # 1 med-sim gen rating > 1111 med-sim gen rating
+sum(typesMed[,2])  # 2 med-sim gen rating > 211 med-sim gen rating
+sum(typesMed[,3])  # 3 med-sim gen rating > 31 med-sim gen rating
+
+sum(typesLow[,1])  # 1 low-sim gen rating > 1111 low-sim gen rating
+sum(typesLow[,2])  # 2 low-sim gen rating > 211 low-sim gen rating
+sum(typesLow[,3])  # 3 low-sim gen rating > 31 low-sim gen rating
+
+# ------- how many times did adding tokens -> decreased gen/no diff? --- #
+sum(tokensHigh[,1])  # how many times the pattern occurred (4(H) is between 0 - (1(H) + .05))
+sum(tokensHigh[,2])  # how many times the pattern occurred (31(H) is between 0 - (11(H) + .05))
+sum(tokensHigh[,3])  # how many times the pattern occurred (211(H) is between 0 - (111(H) + .05))
+
+sum(tokensMed[,1])  # 4(M) is between 0 - (1(M) + .05)
+sum(tokensMed[,2])  # 31(M) is between 0 - (11(M) + .05)
+sum(tokensMed[,3])  # 211(M) is between 0 - (111(M) + .05)
+
+sum(tokensLow[,1])  # 4(L) is between 0 - (1(L) + .05)
+sum(tokensLow[,2])  # 31(L) is between 0 - (11(L) + .05)
+sum(tokensLow[,3])  # 211(L) is between 0 - (111(L) + .05)
+
 
 # trains <- c(train1, train2, train3, train4)        # collate the training stimulus values
 # trains <- as.data.frame(trains)
