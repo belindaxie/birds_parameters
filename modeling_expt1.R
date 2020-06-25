@@ -49,6 +49,7 @@ for (a in 1:parits) {
   # sample different parameter values
   # theta values to represent sampling assumptions/informational value
   thetaType <- runif(1, min = .1, max = .5)          # value used to discuss modeling results = .3
+  # thetaType <- .1          # value used to discuss modeling results = .3
   thetaToken <- runif(1, min = .1, max = thetaType)  # value in paper = .15
   
   # stimulus values for types
@@ -63,7 +64,8 @@ for (a in 1:parits) {
   target4 <- targets[4]                   # .47
   
   # when randomly generating stimulus values for types/tokens, how much standard deviation to use?
-  typesd <- runif(1, .01, .1)             # .06
+  # typesd <- runif(1, .01, .1)             # .06
+  typesd <- .01             # .06
   tokensd <- typesd/6                     # .009
 
   bg1 <- matrix(data = c(rep(0, nits*nt)),   # create enough 0s for each iteration to fill with predicted generalisation probability
@@ -189,6 +191,18 @@ sum(typesMed[,3])  # 3 med-sim gen rating > 31 med-sim gen rating
 sum(typesLow[,1])  # 1 low-sim gen rating > 1111 low-sim gen rating
 sum(typesLow[,2])  # 2 low-sim gen rating > 211 low-sim gen rating
 sum(typesLow[,3])  # 3 low-sim gen rating > 31 low-sim gen rating
+
+typesMed3 <- cbind(typesMed[,3], parValues)
+head(typesMed3)
+colnames(typesMed3)[1] <- "decreased"
+write.csv(typesMed3, "./typesMed3.csv")
+
+typesMed3 <- as.data.frame(typesMed3)
+typesMed3Long <- pivot_longer(typesMed3, thetaType:tokensd, names_to = "parameter", values_to = "value")
+
+ggplot(typesMed3Long, aes(x=value)) +
+  geom_histogram() +
+  facet_wrap(~ decreased + parameter, scales = "free_x")
 
 # ------- how many times did adding tokens -> decreased gen/no diff? --- #
 sum(tokensHigh[,1])  # how many times the pattern occurred (4(H) is between 0 - (1(H) + .05))

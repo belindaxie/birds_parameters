@@ -139,14 +139,44 @@ decreaseHigh  # false when training items are quite high (>.5)?
 decreaseMed
 decreaseLow
 
-sum(decreaseHigh[,1]) # adding type-label instances increases gen at high-sim category
-sum(decreaseHigh[,2]) # adding token-label instances increases gen at high-sim category
+sum(decreaseHigh[,1]) # adding type-label instances decreases gen at high-sim category
+sum(decreaseHigh[,2]) # adding token-label instances decreases gen at high-sim category
 
-sum(decreaseMed[,1]) # adding type-label instances increases gen at med-sim category
-sum(decreaseMed[,2]) # adding token-label instances increases gen at med-sim category
+sum(decreaseMed[,1]) # adding type-label instances decreases gen at med-sim category
+sum(decreaseMed[,2]) # adding token-label instances decreases gen at med-sim category
 
-sum(decreaseLow[,1]) # adding type-label instances increases gen at low-sim category
-sum(decreaseLow[,2]) # adding token-label instances increases gen at low-sim category
+sum(decreaseLow[,1]) # adding type-label instances decreases gen at low-sim category
+sum(decreaseLow[,2]) # adding token-label instances decreases gen at low-sim category
+
+decreaseHigh1 <- cbind(decreaseHigh[,1], parValues)
+head(decreaseHigh1)
+colnames(decreaseHigh1)[1] <- "decreased"
+# write.csv(decreaseHigh1, "./decreaseHigh1.csv")
+
+decreaseHigh1 <- read.csv("./decreaseHigh1.csv")
+
+decreaseHigh1 <- as.data.frame(decreaseHigh1)
+decreaseHigh1 <- pivot_longer(decreaseHigh1, thetaType:tokensd, names_to = "parameter", values_to = "value")
+decreaseHigh1$decreased <- as.character(as.numeric(decreaseHigh1$decreased))
+decreaseHigh1$decreased <- gsub("0", "Did not reproduce", decreaseHigh1$decreased)
+decreaseHigh1$decreased <- gsub("0", "Reproduced", decreaseHigh1$decreased)
+
+library(plyr)
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+mu <- ddply(decreaseHigh1, c("decreased", "parameter"), summarise, grp.mean=mean(value), grp.mode=Mode(value))
+
+ggplot(decreaseHigh1, aes(x=value)) +
+  geom_histogram() +
+  geom_vline(data=mu, aes(xintercept=grp.mean, color="red"), linetype="dashed") +
+  labs(title = "Experiment 3: Adding type-label instances decreases gen for high-similarity items", x = "Parameter value", y = "Count") +
+    # geom_vline(data=mu, aes(xintercept=grp.mode, color="blue"), linetype="dotted") +
+  facet_wrap(~ decreased + parameter, scales = "free") +
+  theme_bw() +
+  theme(legend.position = "none")
 
 # # old repetitions
 # vals <- as.data.frame(cbind(test, bg2old, bg3old, bg4old, bg5old, bg6old)) # combine the similarity category values with generalisation probs for each condtiion
