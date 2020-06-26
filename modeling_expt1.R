@@ -195,14 +195,34 @@ sum(typesLow[,3])  # 3 low-sim gen rating > 31 low-sim gen rating
 typesMed3 <- cbind(typesMed[,3], parValues)
 head(typesMed3)
 colnames(typesMed3)[1] <- "decreased"
-write.csv(typesMed3, "./typesMed3.csv")
+# write.csv(typesMed3, "./typesMed3.csv")
+
+typesMed3 <- read.csv("./typesMed3.csv")
 
 typesMed3 <- as.data.frame(typesMed3)
-typesMed3Long <- pivot_longer(typesMed3, thetaType:tokensd, names_to = "parameter", values_to = "value")
+typesMed3 <- pivot_longer(typesMed3, thetaType:tokensd, names_to = "parameter", values_to = "value")
+typesMed3$decreased <- as.character(as.numeric(typesMed3$decreased))
+typesMed3$decreased <- gsub("0", "Did not reproduce", typesMed3$decreased)
+typesMed3$decreased <- gsub("1", "Reproduced", typesMed3$decreased)
 
-ggplot(typesMed3Long, aes(x=value)) +
-  geom_histogram() +
-  facet_wrap(~ decreased + parameter, scales = "free_x")
+library(plyr)
+mu <- ddply(typesMed3, c("decreased", "parameter"), summarise, grp.mean=mean(value))
+
+ggplot(typesMed3, aes(x=value)) +
+  geom_histogram(bins = 20) +
+  geom_vline(data=mu, aes(xintercept=grp.mean, color="red"), linetype="dashed") +
+  labs(
+    # title = "Experiment 3: Adding type-label instances decreases gen for high-similarity items", 
+    x = "Parameter value", y = "Count") +
+  # geom_vline(data=mu, aes(xintercept=grp.mode, color="blue"), linetype="dotted") +
+  facet_wrap(~ decreased + parameter, scales = "free") +
+  theme_bw() +
+  theme(legend.position = "none")
+
+library(e1071)
+summ <- ddply(typesMed3, c("decreased", "parameter"), summarise,
+      mean = mean(value), sd = sd(value), median = median(value), skew = skewness(value))
+# write.csv(summ, "./typesMed3_parameters.csv")
 
 # ------- how many times did adding tokens -> decreased gen/no diff? --- #
 sum(tokensHigh[,1])  # how many times the pattern occurred (4(H) is between 0 - (1(H) + .05))
