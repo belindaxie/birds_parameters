@@ -4,11 +4,11 @@
 # ----------------- Modeling Experiment 2 conditions ---------------------- #
 # -------------------------------------------------------------------------- #
 
-require(cowplot)
-require(tidyverse)
-require(BayesFactor)
+library(cowplot)
+library(tidyverse)
+library(BayesFactor)
 
-rm(list = ls())
+# rm(list = ls()) # use Ctrl + Shift + F10 to clear environment
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 source("./BayesGen-BX.R")

@@ -4,12 +4,12 @@
 # ----------------- Modeling Experiment 1 conditions ---------------------- #
 # -------------------------------------------------------------------------- #
 
-require(cowplot)
-require(tidyverse)
-require(ggpubr)
-require(BayesFactor)
+library(cowplot)
+library(tidyverse)
+library(ggpubr)
+library(BayesFactor)
 
-rm(list = ls())
+# rm(list = ls()) # use Ctrl + Shift + F10 to clear environment
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 source("./BayesGen-BX.R")
@@ -140,7 +140,6 @@ for (a in 1:parits) {
     typesLow[a,1] <- bg1[3] > bg1111[3]  # adding types decreases gen at low-sim categories?
     typesLow[a,2] <- bg2[3] > bg211[3]  # adding types decreases gen at low-sim categories?
     typesLow[a,3] <- bg3[3] > bg31[3]  # adding types decreases gen at low-sim categories?
-
     
     gap <- .05
     tokensHigh[a,1] <- between(bg4[1], left = 0, right = bg1[1] + gap)
